@@ -3,7 +3,22 @@ import { searchItem as searchWoolworths } from '@/lib/woolworths-api';
 import { searchItem as searchColes } from '@/lib/coles-api';
 import type { CompareResult, CompareItem } from '@/lib/types';
 
-export const maxDuration = 30;
+export const maxDuration = 60;
+
+// Process items in chunks to stay within ScraperAPI's concurrency limit (5 free tier)
+async function batchSearch<T>(
+  items: string[],
+  fn: (item: string) => Promise<T[]>,
+  chunkSize = 4,
+): Promise<T[][]> {
+  const results: T[][] = [];
+  for (let i = 0; i < items.length; i += chunkSize) {
+    const chunk = items.slice(i, i + chunkSize);
+    const chunkResults = await Promise.all(chunk.map(fn));
+    results.push(...chunkResults);
+  }
+  return results;
+}
 
 export async function POST(req: NextRequest) {
   const body = await req.json();
@@ -15,8 +30,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const [woolworthsResults, colesResults] = await Promise.all([
-      Promise.all(items.map((item) => searchWoolworths(item))),
-      Promise.all(items.map((item) => searchColes(item))),
+      batchSearch(items, searchWoolworths),
+      batchSearch(items, searchColes),
     ]);
 
     let woolworthsTotal = 0;
