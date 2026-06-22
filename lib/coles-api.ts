@@ -8,7 +8,7 @@ export interface ColesProduct {
 
 export async function searchItem(query: string): Promise<ColesProduct[]> {
   const cacheKey = `coles:${query.toLowerCase().trim()}`;
-  const cached = cacheGet<ColesProduct[]>(cacheKey);
+  const cached = await cacheGet<ColesProduct[]>(cacheKey);
   if (cached) return cached;
 
   const colesSearchUrl = `https://www.coles.com.au/search?q=${encodeURIComponent(query)}`;
@@ -64,7 +64,7 @@ export async function searchItem(query: string): Promise<ColesProduct[]> {
       };
     });
 
-    cacheSet(cacheKey, products);
+    await cacheSet(cacheKey, products);
     return products;
   } catch (err) {
     console.error('[coles-api] error:', err);

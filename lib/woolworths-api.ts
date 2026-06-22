@@ -8,7 +8,7 @@ export interface WoolworthsProduct {
 
 export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
   const cacheKey = `woolworths:${query.toLowerCase().trim()}`;
-  const cached = cacheGet<WoolworthsProduct[]>(cacheKey);
+  const cached = await cacheGet<WoolworthsProduct[]>(cacheKey);
   if (cached) return cached;
 
   const woolworthsUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
@@ -46,7 +46,7 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
       }
     }
 
-    cacheSet(cacheKey, products);
+    await cacheSet(cacheKey, products);
     return products;
   } catch (err) {
     console.error('[woolworths-api] error:', err);
