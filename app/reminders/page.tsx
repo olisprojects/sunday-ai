@@ -66,15 +66,17 @@ function RemindersContent() {
     const data = await res.json();
     if (data.error) {
       setTriggerMsg(`Error: ${data.error}`);
-    } else if (data.sent === 0) {
-      setTriggerMsg('No due reminders to send right now.');
+    } else if (data.total === 0) {
+      setTriggerMsg('No due reminders right now.');
+    } else if (data.failed > 0) {
+      setTriggerMsg(`Failed: ${data.errors?.[0] || 'unknown error'}`);
     } else {
       setTriggerMsg(`Sent ${data.sent} email${data.sent !== 1 ? 's' : ''}!`);
       const updated = await fetch('/api/reminders').then((r) => r.json());
       setReminders(updated);
     }
     setTriggering(false);
-    setTimeout(() => setTriggerMsg(''), 4000);
+    setTimeout(() => setTriggerMsg(''), 8000);
   }
 
   async function remove(id: string) {
