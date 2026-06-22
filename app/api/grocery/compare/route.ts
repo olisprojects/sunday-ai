@@ -9,7 +9,7 @@ export const maxDuration = 60;
 async function batchSearch<T>(
   items: string[],
   fn: (item: string) => Promise<T[]>,
-  chunkSize = 4,
+  chunkSize = 5,
 ): Promise<T[][]> {
   const results: T[][] = [];
   for (let i = 0; i < items.length; i += chunkSize) {

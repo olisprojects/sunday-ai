@@ -1,3 +1,5 @@
+import { cacheGet, cacheSet } from './price-cache';
+
 export interface ColesProduct {
   name: string;
   price: number | null;
@@ -5,14 +7,17 @@ export interface ColesProduct {
 }
 
 export async function searchItem(query: string): Promise<ColesProduct[]> {
+  const cacheKey = `coles:${query.toLowerCase().trim()}`;
+  const cached = cacheGet<ColesProduct[]>(cacheKey);
+  if (cached) return cached;
+
   const colesSearchUrl = `https://www.coles.com.au/search?q=${encodeURIComponent(query)}`;
 
   try {
     let html: string;
 
     if (process.env.SCRAPER_API_KEY) {
-      // ScraperAPI handles Imperva JS challenges transparently
-      const scraperUrl = `https://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(colesSearchUrl)}`;
+      const scraperUrl = `https://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(colesSearchUrl)}&country_code=au`;
       const res = await fetch(scraperUrl, { cache: 'no-store' });
       if (!res.ok) {
         console.error('[coles-api] ScraperAPI error', res.status);
@@ -20,7 +25,6 @@ export async function searchItem(query: string): Promise<ColesProduct[]> {
       }
       html = await res.text();
     } else {
-      // got-scraping: bypasses TLS fingerprint, may not solve JS challenge on repeated requests
       const { gotScraping } = await import('got-scraping');
       const response = await gotScraping({
         url: colesSearchUrl,
@@ -34,31 +38,20 @@ export async function searchItem(query: string): Promise<ColesProduct[]> {
         },
       });
       html = response.body as string;
-
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[coles-api] got-scraping status:', response.statusCode, 'length:', html.length);
-      }
     }
 
-    // Parse __NEXT_DATA__ embedded in Coles's Next.js page
     const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
     if (!match) {
-      console.error('[coles-api] no __NEXT_DATA__ — likely Imperva challenge page (length', html.length, ')');
+      console.error('[coles-api] no __NEXT_DATA__ — Imperva challenge page (length', html.length, ')');
       return [];
     }
 
     const nextData = JSON.parse(match[1]) as Record<string, unknown>;
     const pageProps = (nextData?.props as Record<string, unknown>)?.pageProps as Record<string, unknown> | undefined;
     const searchResults = pageProps?.searchResults as Record<string, unknown> | undefined;
-
-    // Coles stores products in searchResults.results as a flat array of product objects
     const results = (searchResults?.results as Record<string, unknown>[] | undefined) ?? [];
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[coles-api] products:', results.length, '| first product keys:', Object.keys(results[0] ?? {}));
-    }
-
-    return results.slice(0, 5).map((p) => {
+    const products: ColesProduct[] = results.slice(0, 5).map((p) => {
       const pricing = p.pricing as Record<string, unknown> | undefined;
       const rawPrice = pricing?.now ?? pricing?.price ?? null;
       const brand = p.brand as string | undefined;
@@ -70,6 +63,9 @@ export async function searchItem(query: string): Promise<ColesProduct[]> {
         size: size ?? '',
       };
     });
+
+    cacheSet(cacheKey, products);
+    return products;
   } catch (err) {
     console.error('[coles-api] error:', err);
     return [];

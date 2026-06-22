@@ -1,3 +1,5 @@
+import { cacheGet, cacheSet } from './price-cache';
+
 export interface WoolworthsProduct {
   name: string;
   price: number;
@@ -5,11 +7,14 @@ export interface WoolworthsProduct {
 }
 
 export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
+  const cacheKey = `woolworths:${query.toLowerCase().trim()}`;
+  const cached = cacheGet<WoolworthsProduct[]>(cacheKey);
+  if (cached) return cached;
+
   const woolworthsUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
 
-  // Use ScraperAPI when set (required on Vercel — AU retail sites block US datacenter IPs)
   const fetchUrl = process.env.SCRAPER_API_KEY
-    ? `https://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(woolworthsUrl)}`
+    ? `https://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(woolworthsUrl)}&country_code=au`
     : woolworthsUrl;
 
   try {
@@ -41,6 +46,7 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
       }
     }
 
+    cacheSet(cacheKey, products);
     return products;
   } catch (err) {
     console.error('[woolworths-api] error:', err);
