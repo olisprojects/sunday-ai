@@ -33,6 +33,8 @@ function RemindersContent() {
   const [remindAt, setRemindAt] = useState(localDatetimeDefault);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [triggering, setTriggering] = useState(false);
+  const [triggerMsg, setTriggerMsg] = useState('');
 
   useEffect(() => {
     fetch('/api/reminders')
@@ -55,6 +57,24 @@ function RemindersContent() {
       setRemindAt(localDatetimeDefault());
     }
     setSaving(false);
+  }
+
+  async function triggerNow() {
+    setTriggering(true);
+    setTriggerMsg('');
+    const res = await fetch('/api/reminders/trigger', { method: 'POST' });
+    const data = await res.json();
+    if (data.error) {
+      setTriggerMsg(`Error: ${data.error}`);
+    } else if (data.sent === 0) {
+      setTriggerMsg('No due reminders to send right now.');
+    } else {
+      setTriggerMsg(`Sent ${data.sent} email${data.sent !== 1 ? 's' : ''}!`);
+      const updated = await fetch('/api/reminders').then((r) => r.json());
+      setReminders(updated);
+    }
+    setTriggering(false);
+    setTimeout(() => setTriggerMsg(''), 4000);
   }
 
   async function remove(id: string) {
@@ -99,6 +119,18 @@ function RemindersContent() {
               {saving ? 'Saving…' : 'Set Reminder'}
             </button>
             <p className="text-xs text-center text-gray-400">You&apos;ll receive an email at the scheduled time</p>
+          </div>
+
+          {/* Manual trigger */}
+          <div className="flex items-center gap-3 mb-6">
+            <button
+              onClick={triggerNow}
+              disabled={triggering}
+              className="flex-1 h-10 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-40 active:scale-[0.99] transition-all"
+            >
+              {triggering ? 'Checking…' : 'Send due reminders now'}
+            </button>
+            {triggerMsg && <p className="text-xs text-green-600 font-medium">{triggerMsg}</p>}
           </div>
 
           {loading && <p className="text-center text-gray-400 text-sm py-8">Loading…</p>}
