@@ -5,10 +5,15 @@ export interface WoolworthsProduct {
 }
 
 export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
-  const url = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
+  const woolworthsUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
+
+  // Use ScraperAPI when set (required on Vercel — AU retail sites block US datacenter IPs)
+  const fetchUrl = process.env.SCRAPER_API_KEY
+    ? `https://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(woolworthsUrl)}`
+    : woolworthsUrl;
 
   try {
-    const res = await fetch(url, {
+    const res = await fetch(fetchUrl, {
       headers: {
         Accept: 'application/json',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
@@ -16,7 +21,10 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
       cache: 'no-store',
     });
 
-    if (!res.ok) return [];
+    if (!res.ok) {
+      console.error('[woolworths-api] status:', res.status, 'for query:', query);
+      return [];
+    }
 
     const data = await res.json();
     const products: WoolworthsProduct[] = [];
@@ -34,7 +42,8 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
     }
 
     return products;
-  } catch {
+  } catch (err) {
+    console.error('[woolworths-api] error:', err);
     return [];
   }
 }
