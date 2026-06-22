@@ -34,6 +34,16 @@ export async function POST(req: NextRequest) {
     email,
   }).returning();
 
+  if (process.env.QSTASH_TOKEN && process.env.APP_URL) {
+    const { Client } = await import('@upstash/qstash');
+    const client = new Client({ token: process.env.QSTASH_TOKEN });
+    await client.publishJSON({
+      url: `${process.env.APP_URL}/api/reminders/deliver`,
+      body: { reminderId: item.id },
+      notBefore: Math.floor(new Date(remindAt).getTime() / 1000),
+    });
+  }
+
   return NextResponse.json(item);
 }
 

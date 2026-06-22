@@ -123,17 +123,19 @@ function RemindersContent() {
             <p className="text-xs text-center text-gray-400">You&apos;ll receive an email at the scheduled time</p>
           </div>
 
-          {/* Manual trigger */}
-          <div className="flex items-center gap-3 mb-6">
-            <button
-              onClick={triggerNow}
-              disabled={triggering}
-              className="flex-1 h-10 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-40 active:scale-[0.99] transition-all"
-            >
-              {triggering ? 'Checking…' : 'Send due reminders now'}
-            </button>
-            {triggerMsg && <p className="text-xs text-green-600 font-medium">{triggerMsg}</p>}
-          </div>
+          {/* Manual trigger — dev only */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="flex items-center gap-3 mb-6">
+              <button
+                onClick={triggerNow}
+                disabled={triggering}
+                className="flex-1 h-10 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-medium disabled:opacity-40 active:scale-[0.99] transition-all"
+              >
+                {triggering ? 'Checking…' : 'Send due reminders now'}
+              </button>
+              {triggerMsg && <p className="text-xs text-green-600 font-medium">{triggerMsg}</p>}
+            </div>
+          )}
 
           {loading && <p className="text-center text-gray-400 text-sm py-8">Loading…</p>}
 

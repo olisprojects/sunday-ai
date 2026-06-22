@@ -12,8 +12,10 @@ const isProtectedRoute = createRouteMatcher([
   '/api/intent(.*)',
 ]);
 
+const isPublicRoute = createRouteMatcher(['/api/reminders/deliver']);
+
 export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
+  if (!isPublicRoute(req) && isProtectedRoute(req)) await auth.protect();
 });
 
 export const config = {
