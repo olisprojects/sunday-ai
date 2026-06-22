@@ -1,5 +1,5 @@
-import Dashboard from '@/components/Dashboard';
+import GroceryApp from '@/components/GroceryApp';
 
 export default function Home() {
-  return <Dashboard />;
+  return <GroceryApp />;
 }

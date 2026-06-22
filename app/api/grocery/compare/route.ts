@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchItem } from '@/lib/woolworths-api';
+import { searchItem as searchWoolworths } from '@/lib/woolworths-api';
+import { searchItem as searchColes } from '@/lib/coles-api';
 import type { CompareResult, CompareItem } from '@/lib/types';
 
 export const maxDuration = 30;
@@ -13,36 +14,66 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const results = await Promise.all(items.map((item) => searchItem(item)));
+    const [woolworthsResults, colesResults] = await Promise.all([
+      Promise.all(items.map((item) => searchWoolworths(item))),
+      Promise.all(items.map((item) => searchColes(item))),
+    ]);
 
     let woolworthsTotal = 0;
     let woolworthsCount = 0;
+    let colesTotal = 0;
+    let colesCount = 0;
+    let commonCount = 0;
 
     const comparisons: CompareItem[] = items.map((item, i) => {
-      const top = results[i][0] ?? null;
-      if (top?.price) {
-        woolworthsTotal += top.price;
-        woolworthsCount++;
-      }
+      const wTop = woolworthsResults[i][0] ?? null;
+      const cTop = colesResults[i][0] ?? null;
+
+      if (wTop?.price) { woolworthsTotal += wTop.price; woolworthsCount++; }
+      if (cTop?.price) { colesTotal += cTop.price; colesCount++; }
+      if (wTop?.price && cTop?.price) commonCount++;
+
+      const saving =
+        wTop?.price && cTop?.price
+          ? Math.abs(wTop.price - cTop.price).toFixed(2)
+          : null;
+
+      const cheapest =
+        wTop?.price && cTop?.price
+          ? wTop.price <= cTop.price ? 'woolworths' : 'coles'
+          : wTop?.price ? 'woolworths'
+          : cTop?.price ? 'coles'
+          : 'unknown';
+
       return {
         item,
-        woolworths: top ? { name: top.name, price: top.price } : null,
-        coles: null,
-        cheapest: top ? 'woolworths' : 'unknown',
-        saving: null,
+        woolworths: wTop ? { name: wTop.name, price: wTop.price } : null,
+        coles: cTop ? { name: cTop.name, price: cTop.price } : null,
+        cheapest,
+        saving,
       };
     });
+
+    const cheapestOverall: 'woolworths' | 'coles' =
+      woolworthsTotal > 0 && colesTotal > 0
+        ? woolworthsTotal <= colesTotal ? 'woolworths' : 'coles'
+        : 'woolworths';
+
+    const overallSaving =
+      woolworthsTotal > 0 && colesTotal > 0
+        ? Math.abs(woolworthsTotal - colesTotal).toFixed(2)
+        : '0.00';
 
     const result: CompareResult = {
       comparisons,
       totals: {
         woolworths: woolworthsTotal.toFixed(2),
-        coles: '0.00',
-        cheapestOverall: 'woolworths',
-        saving: '0.00',
+        coles: colesTotal.toFixed(2),
+        cheapestOverall,
+        saving: overallSaving,
         woolworthsCount,
-        colesCount: 0,
-        commonCount: 0,
+        colesCount,
+        commonCount,
       },
     };
 
