@@ -64,16 +64,11 @@ export default function StepBrainDump({ onNext }: Props) {
   return (
     <>
       <div className="pt-10 pb-4">
-        {/* Headline */}
-        <h1 className="text-3xl font-bold leading-tight mb-2" style={{ color: 'var(--foreground)' }}>
+        <h1 className="text-2xl font-semibold leading-snug mb-6" style={{ color: 'var(--foreground)' }}>
           {headline || HEADLINES[0]}
         </h1>
-        <p className="text-base mb-8" style={{ color: 'var(--muted)' }}>
-          Type an item and press Enter, then compare prices.
-        </p>
 
-        {/* Chat-style input */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-3">
           <input
             ref={inputRef}
             value={input}
@@ -81,7 +76,7 @@ export default function StepBrainDump({ onNext }: Props) {
             onKeyDown={handleKeyDown}
             placeholder="e.g. Full cream milk..."
             autoFocus
-            className="flex-1 h-14 px-5 rounded-2xl text-base transition-colors focus:outline-none shadow-sm"
+            className="flex-1 h-10 px-4 rounded-xl text-sm focus:outline-none transition-colors"
             style={{
               border: '1px solid var(--border)',
               background: 'var(--surface)',
@@ -93,26 +88,25 @@ export default function StepBrainDump({ onNext }: Props) {
           <button
             onClick={() => addItem(input)}
             disabled={!input.trim()}
-            className="h-14 px-5 rounded-2xl text-white font-semibold text-base disabled:opacity-40 active:scale-95 transition-all"
+            className="h-10 px-4 rounded-xl text-white font-medium text-sm disabled:opacity-40 active:scale-95 transition-all"
             style={{ background: 'var(--accent)' }}
           >
             Add
           </button>
         </div>
 
-        {/* Added items chips */}
         {items.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-5">
+          <div className="flex flex-wrap gap-1.5 mb-4">
             {items.map(item => (
               <div
                 key={item}
-                className="chip-in flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-sm font-medium"
+                className="chip-in flex items-center gap-1 px-2.5 py-1 rounded-full text-white text-xs font-medium"
                 style={{ background: 'var(--foreground)' }}
               >
                 {item}
                 <button
                   onClick={() => removeItem(item)}
-                  className="opacity-60 active:opacity-100 text-base leading-none ml-0.5"
+                  className="opacity-50 active:opacity-100 leading-none ml-0.5"
                   aria-label={`Remove ${item}`}
                 >
                   ×
@@ -122,16 +116,15 @@ export default function StepBrainDump({ onNext }: Props) {
           </div>
         )}
 
-        {/* Item count + pantry trigger */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+        <div className="flex items-center justify-between mb-5">
+          <p className="text-xs" style={{ color: 'var(--muted)' }}>
             {items.length > 0
               ? `${items.length} item${items.length !== 1 ? 's' : ''} added`
               : 'No items yet'}
           </p>
           <button
             onClick={() => setPantryOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm active:scale-95 transition-all"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs active:scale-95 transition-all"
             style={{
               border: '1px solid var(--border)',
               background: 'var(--surface)',
@@ -143,18 +136,20 @@ export default function StepBrainDump({ onNext }: Props) {
           </button>
         </div>
 
-        {/* Compare CTA */}
         <button
           onClick={() => onNext(items)}
           disabled={items.length === 0}
-          className="w-full h-14 rounded-2xl text-white font-bold text-lg disabled:opacity-30 active:scale-95 transition-all"
-          style={{
-            background: 'var(--accent)',
-            boxShadow: '0 8px 24px rgba(124,58,237,0.2)',
-          }}
+          className="w-full h-10 rounded-xl text-white font-medium text-sm disabled:opacity-30 active:scale-95 transition-all"
+          style={{ background: 'var(--accent)' }}
         >
-          Compare Prices →
+          Compare prices →
         </button>
+
+        <div className="text-center mt-4">
+          <a href="/" className="text-sm" style={{ color: 'var(--muted)' }}>
+            back
+          </a>
+        </div>
       </div>
 
       <PantryPanel
