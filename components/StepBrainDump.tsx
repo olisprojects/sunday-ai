@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
 import PantryPanel from './PantryPanel';
 
 const HEADLINES = [
@@ -21,7 +21,10 @@ interface Props {
 }
 
 export default function StepBrainDump({ onNext }: Props) {
-  const headline = useMemo(() => HEADLINES[Math.floor(Math.random() * HEADLINES.length)], []);
+  const [headline, setHeadline] = useState('');
+  useEffect(() => {
+    setHeadline(HEADLINES[Math.floor(Math.random() * HEADLINES.length)]);
+  }, []);
   const [input, setInput] = useState('');
   const [items, setItems] = useState<string[]>([]);
   const [pantryOpen, setPantryOpen] = useState(false);
@@ -63,7 +66,7 @@ export default function StepBrainDump({ onNext }: Props) {
       <div className="pt-10 pb-4">
         {/* Headline */}
         <h1 className="text-3xl font-bold leading-tight mb-2" style={{ color: 'var(--foreground)' }}>
-          {headline}
+          {headline || HEADLINES[0]}
         </h1>
         <p className="text-base mb-8" style={{ color: 'var(--muted)' }}>
           Type an item and press Enter, then compare prices.
