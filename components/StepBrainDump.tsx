@@ -136,7 +136,7 @@ export default function StepBrainDump({ onNext }: Props) {
             className="text-xs active:opacity-60 transition-opacity"
             style={{ color: 'var(--muted)' }}
           >
-            pantry list
+            Pantry List
           </button>
         </div>
 
