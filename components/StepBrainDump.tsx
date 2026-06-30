@@ -1,11 +1,19 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import PantryPanel from './PantryPanel';
 
-const QUICK_ADD = [
-  'Milk', 'Bread', 'Eggs', 'Chicken', 'Rice', 'Pasta',
-  'Butter', 'Cheese', 'Yoghurt', 'Bananas', 'Apples', 'Coffee',
-  'Olive oil', 'Onions', 'Garlic', 'Tomatoes',
+const HEADLINES = [
+  "What's on the list this week?",
+  "What are we feeling like this week?",
+  "Let's find the best deals.",
+  "What do we need from the shops?",
+  "Time to fill the fridge.",
+  "What's running low this week?",
+  "Let's do the weekly shop.",
+  "What's on the menu this week?",
+  "Planning the weekly haul.",
+  "Let's compare and save.",
 ];
 
 interface Props {
@@ -13,102 +21,105 @@ interface Props {
 }
 
 export default function StepBrainDump({ onNext }: Props) {
+  const [headline, setHeadline] = useState('');
+  useEffect(() => {
+    setHeadline(HEADLINES[Math.floor(Math.random() * HEADLINES.length)]);
+  }, []);
+
   const [input, setInput] = useState('');
   const [items, setItems] = useState<string[]>([]);
+  const [pantryOpen, setPantryOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function addItem(text: string) {
     const trimmed = text.trim();
     if (!trimmed) return;
-    const lower = trimmed.toLowerCase();
-    if (items.map((i) => i.toLowerCase()).includes(lower)) {
+    if (items.map(i => i.toLowerCase()).includes(trimmed.toLowerCase())) {
       setInput('');
       return;
     }
-    setItems((prev) => [...prev, trimmed]);
+    setItems(prev => [...prev, trimmed]);
     setInput('');
     inputRef.current?.focus();
   }
 
   function removeItem(item: string) {
-    setItems((prev) => prev.filter((i) => i !== item));
+    setItems(prev => prev.filter(i => i !== item));
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addItem(input);
-    }
+    if (e.key === 'Enter') { e.preventDefault(); addItem(input); }
     if (e.key === 'Backspace' && input === '' && items.length > 0) {
-      setItems((prev) => prev.slice(0, -1));
+      setItems(prev => prev.slice(0, -1));
     }
   }
 
-  const isAdded = (q: string) =>
-    items.map((i) => i.toLowerCase()).includes(q.toLowerCase());
+  function handleUseFromPantry(pantryItems: string[]) {
+    setItems(prev => {
+      const existing = prev.map(i => i.toLowerCase());
+      const toAdd = pantryItems.filter(i => !existing.includes(i.toLowerCase()));
+      return [...prev, ...toAdd];
+    });
+  }
 
   return (
-    <div className="pt-6">
-      <h1 className="text-3xl font-bold text-gray-900 leading-tight mb-1">
-        What&apos;s on the list this week?
-      </h1>
-      <p className="text-gray-500 text-base mb-6">
-        Tap a chip below, or type and press Add.
-      </p>
+    <>
+      <div className="pt-16 pb-4">
 
-      {/* Input row */}
-      <div className="flex gap-2 mb-5">
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="e.g. Full cream milk..."
-          className="flex-1 h-14 px-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 text-base placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
-        />
-        <button
-          onClick={() => addItem(input)}
-          disabled={!input.trim()}
-          className="h-14 px-5 rounded-2xl bg-green-500 text-white font-semibold text-base disabled:opacity-40 active:scale-95 transition-all"
+        {/* Serif headline */}
+        <h1
+          className="text-3xl leading-snug mb-8 text-center"
+          style={{ fontFamily: 'var(--font-serif)', color: 'var(--foreground)' }}
         >
-          Add
-        </button>
-      </div>
+          {headline || HEADLINES[0]}
+        </h1>
 
-      {/* Quick-add chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {QUICK_ADD.map((q) => (
+        {/* Input with Add button inside */}
+        <div className="relative mb-4">
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g. Full cream milk..."
+            autoFocus
+            className="w-full h-14 pl-5 pr-20 rounded-2xl text-sm focus:outline-none transition-shadow"
+            style={{
+              background: 'var(--surface)',
+              color: 'var(--foreground)',
+              boxShadow: '0 1px 10px rgba(0,0,0,0.07)',
+              border: '1px solid transparent',
+            }}
+            onFocus={e => (e.currentTarget.style.border = '1px solid var(--accent)')}
+            onBlur={e => (e.currentTarget.style.border = '1px solid transparent')}
+          />
           <button
-            key={q}
-            onClick={() => addItem(q)}
-            className={`px-3 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 ${
-              isAdded(q)
-                ? 'bg-green-100 text-green-700 border border-green-300'
-                : 'bg-white border border-gray-200 text-gray-600'
-            }`}
+            onClick={() => addItem(input)}
+            disabled={!input.trim()}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 h-9 px-4 rounded-xl text-xs font-medium text-white disabled:opacity-30 active:scale-95 transition-all"
+            style={{ background: 'var(--button)' }}
           >
-            {isAdded(q) ? '✓ ' : '+ '}
-            {q}
+            Add
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* Added items */}
-      {items.length > 0 && (
-        <div className="mb-6">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-            {items.length} item{items.length !== 1 ? 's' : ''} added
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {items.map((item) => (
+        {/* Item chips */}
+        {items.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-5">
+            {items.map(item => (
               <div
                 key={item}
-                className="chip-in flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm font-medium"
+                className="chip-in flex items-center gap-1 px-3 py-1 rounded-full text-xs"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--foreground)',
+                }}
               >
                 {item}
                 <button
                   onClick={() => removeItem(item)}
-                  className="opacity-60 active:opacity-100 text-base leading-none ml-0.5"
+                  className="opacity-40 active:opacity-100 leading-none ml-0.5"
                   aria-label={`Remove ${item}`}
                 >
                   ×
@@ -116,17 +127,42 @@ export default function StepBrainDump({ onNext }: Props) {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* CTA */}
-      <button
-        onClick={() => onNext(items)}
-        disabled={items.length === 0}
-        className="w-full h-14 rounded-2xl bg-green-500 text-white font-bold text-lg disabled:opacity-40 active:scale-95 transition-all shadow-lg shadow-green-500/25"
-      >
-        Compare Prices →
-      </button>
-    </div>
+        {/* Pantry list — centred */}
+        <div className="text-center mb-5">
+          <button
+            onClick={() => setPantryOpen(true)}
+            className="text-xs active:opacity-60 transition-opacity"
+            style={{ color: 'var(--muted)' }}
+          >
+            Pantry List
+          </button>
+        </div>
+
+        {/* Compare — ghost, fills on hover */}
+        <button
+          onClick={() => onNext(items)}
+          disabled={items.length === 0}
+          className="btn-compare w-full h-10 rounded-xl font-medium text-sm active:scale-95 transition-all"
+        >
+          Compare prices →
+        </button>
+
+        {/* Back */}
+        <div className="text-center mt-4">
+          <a href="/" className="text-xs" style={{ color: 'var(--muted)' }}>
+            back
+          </a>
+        </div>
+
+      </div>
+
+      <PantryPanel
+        open={pantryOpen}
+        onClose={() => setPantryOpen(false)}
+        onUseItems={handleUseFromPantry}
+      />
+    </>
   );
 }
