@@ -6,66 +6,57 @@ export interface ColesProduct {
   size: string;
 }
 
+const BFF_URL = 'https://www.coles.com.au/api/bff/products/search';
+const DEFAULT_STORE_ID = '0584';
+
 export async function searchItem(query: string): Promise<ColesProduct[]> {
   const cacheKey = `coles:${query.toLowerCase().trim()}`;
   const cached = await cacheGet<ColesProduct[]>(cacheKey);
   if (cached) return cached;
 
-  const colesSearchUrl = `https://www.coles.com.au/search?q=${encodeURIComponent(query)}`;
+  const apiKey = process.env.COLES_API_KEY;
+  if (!apiKey) {
+    console.error('[coles-api] COLES_API_KEY not set');
+    return [];
+  }
+
+  const params = new URLSearchParams({
+    storeId: DEFAULT_STORE_ID,
+    searchTerm: query,
+    start: '0',
+    sortBy: 'salesDescending',
+    excludeAds: 'true',
+    authenticated: 'false',
+    'subscription-key': apiKey,
+  });
 
   try {
-    let html: string;
+    const res = await fetch(`${BFF_URL}?${params}`, {
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+      },
+      cache: 'no-store',
+    });
 
-    if (process.env.SCRAPER_API_KEY) {
-      const scraperUrl = `https://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(colesSearchUrl)}&country_code=au`;
-      const res = await fetch(scraperUrl, { cache: 'no-store' });
-      if (!res.ok) {
-        console.error('[coles-api] ScraperAPI error', res.status);
-        return [];
-      }
-      html = await res.text();
-    } else {
-      const { gotScraping } = await import('got-scraping');
-      const response = await gotScraping({
-        url: colesSearchUrl,
-        responseType: 'text',
-        timeout: { request: 20000 },
-        headers: { Referer: 'https://www.google.com/' },
-        headerGeneratorOptions: {
-          browsers: [{ name: 'chrome', minVersion: 120 }],
-          operatingSystems: ['windows'],
-          locales: ['en-AU'],
-        },
-      });
-      html = response.body as string;
-    }
-
-    const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([\s\S]*?)<\/script>/);
-    if (!match) {
-      console.error('[coles-api] no __NEXT_DATA__ — Imperva challenge page (length', html.length, ')');
+    if (!res.ok) {
+      console.error('[coles-api] status:', res.status, 'for query:', query);
       return [];
     }
 
-    const nextData = JSON.parse(match[1]) as Record<string, unknown>;
-    const pageProps = (nextData?.props as Record<string, unknown>)?.pageProps as Record<string, unknown> | undefined;
-    const searchResults = pageProps?.searchResults as Record<string, unknown> | undefined;
-    const results = (searchResults?.results as Record<string, unknown>[] | undefined) ?? [];
-
-    const products: ColesProduct[] = results.slice(0, 5).map((p) => {
+    const data = await res.json();
+    const results: ColesProduct[] = (data.results ?? []).slice(0, 5).map((p: Record<string, unknown>) => {
       const pricing = p.pricing as Record<string, unknown> | undefined;
-      const rawPrice = pricing?.now ?? pricing?.price ?? null;
-      const brand = p.brand as string | undefined;
-      const name = p.name as string | undefined;
-      const size = p.size as string | undefined;
+      const price = pricing?.now ?? pricing?.was ?? null;
       return {
-        name: brand ? `${brand} ${name ?? query}` : (name ?? query),
-        price: rawPrice != null ? Number(rawPrice) : null,
-        size: size ?? '',
+        name: (p.brand ? `${p.brand} ${p.name ?? query}` : (p.name ?? query)) as string,
+        price: price != null ? Number(price) : null,
+        size: (p.packageSize as string) ?? '',
       };
     });
 
-    await cacheSet(cacheKey, products);
-    return products;
+    await cacheSet(cacheKey, results);
+    return results;
   } catch (err) {
     console.error('[coles-api] error:', err);
     return [];

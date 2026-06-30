@@ -11,11 +11,7 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
   const cached = await cacheGet<WoolworthsProduct[]>(cacheKey);
   if (cached) return cached;
 
-  const woolworthsUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
-
-  const fetchUrl = process.env.SCRAPER_API_KEY
-    ? `https://api.scraperapi.com?api_key=${process.env.SCRAPER_API_KEY}&url=${encodeURIComponent(woolworthsUrl)}&country_code=au`
-    : woolworthsUrl;
+  const fetchUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
 
   try {
     const res = await fetch(fetchUrl, {

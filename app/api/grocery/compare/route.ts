@@ -5,21 +5,6 @@ import type { CompareResult, CompareItem } from '@/lib/types';
 
 export const maxDuration = 60;
 
-// Process items in chunks to stay within ScraperAPI's concurrency limit (5 free tier)
-async function batchSearch<T>(
-  items: string[],
-  fn: (item: string) => Promise<T[]>,
-  chunkSize = 5,
-): Promise<T[][]> {
-  const results: T[][] = [];
-  for (let i = 0; i < items.length; i += chunkSize) {
-    const chunk = items.slice(i, i + chunkSize);
-    const chunkResults = await Promise.all(chunk.map(fn));
-    results.push(...chunkResults);
-  }
-  return results;
-}
-
 export async function POST(req: NextRequest) {
   const body = await req.json();
   const items: string[] = body.items;
@@ -30,8 +15,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const [woolworthsResults, colesResults] = await Promise.all([
-      batchSearch(items, searchWoolworths),
-      batchSearch(items, searchColes),
+      Promise.all(items.map(searchWoolworths)),
+      Promise.all(items.map(searchColes)),
     ]);
 
     let woolworthsTotal = 0;
