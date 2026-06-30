@@ -11,11 +11,12 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
   const cached = await cacheGet<WoolworthsProduct[]>(cacheKey);
   if (cached) return cached;
 
-  const woolworthsUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
-  const scraperKey = process.env.SCRAPER_API_KEY;
-  const fetchUrl = scraperKey
-    ? `http://api.scraperapi.com?api_key=${scraperKey}&url=${encodeURIComponent(woolworthsUrl)}&country_code=au`
-    : woolworthsUrl;
+  // In production, route through a Cloudflare Worker proxy (WOOLWORTHS_PROXY_URL env var).
+  // Worker-to-Cloudflare subrequests bypass WAF bot detection; direct Lambda IPs are blocked.
+  const proxyUrl = process.env.WOOLWORTHS_PROXY_URL;
+  const fetchUrl = proxyUrl
+    ? `${proxyUrl}?q=${encodeURIComponent(query)}`
+    : `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
 
   try {
     const res = await fetch(fetchUrl, {
