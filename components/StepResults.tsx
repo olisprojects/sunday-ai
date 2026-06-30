@@ -228,11 +228,11 @@ export default function StepResults({ result, onReset }: Props) {
         </div>
       </div>
 
-      {/* New list — text only */}
+      {/* New list */}
       <div className="text-center pt-2 pb-4">
         <button
           onClick={onReset}
-          className="text-sm"
+          className="text-xs active:opacity-60 transition-opacity"
           style={{ color: 'var(--muted)' }}
         >
           new list

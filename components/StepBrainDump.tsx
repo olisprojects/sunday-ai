@@ -25,6 +25,7 @@ export default function StepBrainDump({ onNext }: Props) {
   useEffect(() => {
     setHeadline(HEADLINES[Math.floor(Math.random() * HEADLINES.length)]);
   }, []);
+
   const [input, setInput] = useState('');
   const [items, setItems] = useState<string[]>([]);
   const [pantryOpen, setPantryOpen] = useState(false);
@@ -63,12 +64,18 @@ export default function StepBrainDump({ onNext }: Props) {
 
   return (
     <>
-      <div className="pt-10 pb-4">
-        <h1 className="text-2xl font-semibold leading-snug mb-6" style={{ color: 'var(--foreground)' }}>
+      <div className="pt-16 pb-4">
+
+        {/* Serif headline */}
+        <h1
+          className="text-3xl leading-snug mb-8 text-center"
+          style={{ fontFamily: 'var(--font-serif)', color: 'var(--foreground)' }}
+        >
           {headline || HEADLINES[0]}
         </h1>
 
-        <div className="flex gap-2 mb-3">
+        {/* Input with Add button inside */}
+        <div className="relative mb-4">
           <input
             ref={inputRef}
             value={input}
@@ -76,37 +83,43 @@ export default function StepBrainDump({ onNext }: Props) {
             onKeyDown={handleKeyDown}
             placeholder="e.g. Full cream milk..."
             autoFocus
-            className="flex-1 h-10 px-4 rounded-xl text-sm focus:outline-none transition-colors"
+            className="w-full h-14 pl-5 pr-20 rounded-2xl text-sm focus:outline-none transition-shadow"
             style={{
-              border: '1px solid var(--border)',
               background: 'var(--surface)',
               color: 'var(--foreground)',
+              boxShadow: '0 1px 10px rgba(0,0,0,0.07)',
+              border: '1px solid transparent',
             }}
-            onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
-            onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+            onFocus={e => (e.currentTarget.style.border = '1px solid var(--accent)')}
+            onBlur={e => (e.currentTarget.style.border = '1px solid transparent')}
           />
           <button
             onClick={() => addItem(input)}
             disabled={!input.trim()}
-            className="h-10 px-4 rounded-xl text-white font-medium text-sm disabled:opacity-40 active:scale-95 transition-all"
-            style={{ background: 'var(--accent)' }}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 h-9 px-4 rounded-xl text-xs font-medium text-white disabled:opacity-30 active:scale-95 transition-all"
+            style={{ background: 'var(--button)' }}
           >
             Add
           </button>
         </div>
 
+        {/* Item chips */}
         {items.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mb-4">
+          <div className="flex flex-wrap gap-1.5 mb-5">
             {items.map(item => (
               <div
                 key={item}
-                className="chip-in flex items-center gap-1 px-2.5 py-1 rounded-full text-white text-xs font-medium"
-                style={{ background: 'var(--foreground)' }}
+                className="chip-in flex items-center gap-1 px-3 py-1 rounded-full text-xs"
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--foreground)',
+                }}
               >
                 {item}
                 <button
                   onClick={() => removeItem(item)}
-                  className="opacity-50 active:opacity-100 leading-none ml-0.5"
+                  className="opacity-40 active:opacity-100 leading-none ml-0.5"
                   aria-label={`Remove ${item}`}
                 >
                   ×
@@ -116,40 +129,33 @@ export default function StepBrainDump({ onNext }: Props) {
           </div>
         )}
 
-        <div className="flex items-center justify-between mb-5">
-          <p className="text-xs" style={{ color: 'var(--muted)' }}>
-            {items.length > 0
-              ? `${items.length} item${items.length !== 1 ? 's' : ''} added`
-              : 'No items yet'}
-          </p>
+        {/* Pantry list — centred */}
+        <div className="text-center mb-5">
           <button
             onClick={() => setPantryOpen(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs active:scale-95 transition-all"
-            style={{
-              border: '1px solid var(--border)',
-              background: 'var(--surface)',
-              color: 'var(--muted)',
-            }}
+            className="text-xs active:opacity-60 transition-opacity"
+            style={{ color: 'var(--muted)' }}
           >
-            <span>🧺</span>
-            <span>This week&apos;s list</span>
+            pantry list
           </button>
         </div>
 
+        {/* Compare — ghost, fills on hover */}
         <button
           onClick={() => onNext(items)}
           disabled={items.length === 0}
-          className="w-full h-10 rounded-xl text-white font-medium text-sm disabled:opacity-30 active:scale-95 transition-all"
-          style={{ background: 'var(--accent)' }}
+          className="btn-compare w-full h-10 rounded-xl font-medium text-sm active:scale-95 transition-all"
         >
           Compare prices →
         </button>
 
+        {/* Back */}
         <div className="text-center mt-4">
-          <a href="/" className="text-sm" style={{ color: 'var(--muted)' }}>
+          <a href="/" className="text-xs" style={{ color: 'var(--muted)' }}>
             back
           </a>
         </div>
+
       </div>
 
       <PantryPanel

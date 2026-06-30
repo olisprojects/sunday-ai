@@ -29,7 +29,7 @@ export default function GroceryApp() {
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--background)' }}>
       <main className="flex-1 px-5 pb-10">
-        <div className="max-w-lg mx-auto">
+        <div className="max-w-md mx-auto">
           <div key={step} className="step-fade">
             {step === 1 && (
               <StepBrainDump onNext={i => { setItems(i); setStep(2); }} />
