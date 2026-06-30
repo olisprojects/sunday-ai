@@ -9,10 +9,13 @@ interface Props {
   onReset: () => void;
 }
 
-const STORE_STYLE = {
-  woolworths: { color: '#009E1B', paleBg: '#f6fcf7', label: 'Woolworths' },
-  coles:      { color: '#E21C1C', paleBg: '#fdf6f6', label: 'Coles' },
+const STORE_LABEL: Record<string, string> = {
+  woolworths: 'Woolworths',
+  coles: 'Coles',
 };
+
+const WIN_COLOR  = '#3d7a55'; // outcome green — cheapest
+const LOSE_COLOR = '#9a9590'; // outcome grey  — more expensive
 
 type StoreName = 'woolworths' | 'coles';
 
@@ -32,7 +35,8 @@ function StoreCompareCard({
   isWinner: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const { color, label } = STORE_STYLE[storeName];
+  const label = STORE_LABEL[storeName];
+  const priceColor = isWinner ? WIN_COLOR : LOSE_COLOR;
   const noData = itemCount === 0;
   const totalNum = parseFloat(total);
 
@@ -46,7 +50,7 @@ function StoreCompareCard({
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium" style={{ color: 'var(--foreground)' }}>{label}</span>
             {isWinner && !noData && (
-              <span className="text-xs" style={{ color }}>winner</span>
+              <span className="text-xs" style={{ color: WIN_COLOR }}>winner</span>
             )}
             {noData && (
               <span className="text-xs" style={{ color: 'var(--muted)' }}>no prices found</span>
@@ -61,7 +65,7 @@ function StoreCompareCard({
 
         {!noData && (
           <>
-            <span className="text-sm font-semibold tabular-nums flex-shrink-0" style={{ color }}>
+            <span className="text-sm font-semibold tabular-nums flex-shrink-0" style={{ color: priceColor }}>
               ${totalNum.toFixed(2)}
             </span>
             <span
@@ -107,7 +111,7 @@ function StoreCompareCard({
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className="text-xs tabular-nums" style={{ color: isCheapest ? color : 'var(--muted)' }}>
+                      <span className="text-xs tabular-nums" style={{ color: isCheapest ? WIN_COLOR : LOSE_COLOR }}>
                         {price}
                       </span>
                     </div>
@@ -126,7 +130,6 @@ export default function StepResults({ result, onReset }: Props) {
   const { totals, comparisons } = result;
   const winner: StoreName = totals.cheapestOverall;
   const loser: StoreName  = winner === 'woolworths' ? 'coles' : 'woolworths';
-  const store = STORE_STYLE[winner];
   const winnerTotal = parseFloat(totals[winner]);
   const loserTotal  = parseFloat(totals[loser]);
   const saving      = parseFloat(totals.saving);
@@ -136,36 +139,36 @@ export default function StepResults({ result, onReset }: Props) {
   return (
     <div className="pt-6 space-y-3">
 
-      {/* Winner banner — white card, left accent border in store colour */}
+      {/* Winner banner */}
       <div
         className="rounded-2xl p-5 step-fade"
         style={{
           background: 'var(--surface)',
           border: '1px solid var(--border)',
-          borderLeft: `3px solid ${store.color}`,
+          borderLeft: `3px solid ${WIN_COLOR}`,
         }}
       >
         <p className="text-xs uppercase tracking-widest mb-3" style={{ color: 'var(--muted)', fontFamily: 'var(--font-sans)' }}>
           Winner this week
         </p>
         <p className="text-xl font-semibold mb-4" style={{ color: 'var(--foreground)', fontFamily: 'var(--font-serif)' }}>
-          {store.label}
+          {STORE_LABEL[winner]}
         </p>
         <div className="flex items-baseline gap-5">
           <div>
-            <p className="text-2xl font-bold tabular-nums" style={{ color: store.color }}>
+            <p className="text-2xl font-bold tabular-nums" style={{ color: WIN_COLOR }}>
               ${winnerTotal.toFixed(2)}
             </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{store.label}</p>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{STORE_LABEL[winner]}</p>
           </div>
           {loserHasData && hasComparison && (
             <>
               <p className="text-sm" style={{ color: 'var(--border)' }}>vs</p>
               <div>
-                <p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--muted)' }}>
+                <p className="text-2xl font-bold tabular-nums" style={{ color: LOSE_COLOR }}>
                   ${loserTotal.toFixed(2)}
                 </p>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{STORE_STYLE[loser].label}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>{STORE_LABEL[loser]}</p>
               </div>
               {saving > 0 && (
                 <p className="text-xs ml-auto self-end pb-0.5" style={{ color: 'var(--muted)' }}>
