@@ -17,10 +17,6 @@ const STORE_STYLE = {
 
 type StoreName = 'woolworths' | 'coles';
 
-// ── Collapsible per-store comparison card ────────────────────────────────────
-// Uses Framer Motion only for the height expand/collapse — no interactive elements
-// inside the animated div, so no touch-event conflict.
-
 function StoreCompareCard({
   storeName,
   comparisons,
@@ -42,27 +38,30 @@ function StoreCompareCard({
   const totalNum = parseFloat(total);
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+    <div className="rounded-2xl overflow-hidden shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
       <button
-        onClick={() => !noData && setOpen((o) => !o)}
-        className={`w-full flex items-center gap-3 px-4 py-4 text-left active:bg-gray-50 transition-colors ${noData ? 'cursor-default' : ''}`}
+        onClick={() => !noData && setOpen(o => !o)}
+        className={`w-full flex items-center gap-3 px-4 py-4 text-left transition-colors ${noData ? 'cursor-default' : 'active:bg-gray-50'}`}
       >
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-gray-900">{label}</span>
+            <span className="font-bold" style={{ color: 'var(--foreground)' }}>{label}</span>
             {isWinner && !noData && (
-              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-semibold">
+              <span
+                className="text-xs px-2 py-0.5 rounded-full font-semibold"
+                style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+              >
                 Winner
               </span>
             )}
             {noData && (
               <span className="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full font-medium">
-                {storeName === 'coles' ? 'Coming soon' : 'No prices found'}
+                No prices found
               </span>
             )}
           </div>
           {!noData && (
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
               {itemCount} of {totalItems} item{totalItems !== 1 ? 's' : ''} found
             </p>
           )}
@@ -73,10 +72,13 @@ function StoreCompareCard({
             <span className="font-bold text-base tabular-nums flex-shrink-0" style={{ color }}>
               ${totalNum.toFixed(2)}
             </span>
-            {/* CSS rotate transition — no composited layer */}
             <span
-              className="text-gray-300 text-lg leading-none flex-shrink-0 transition-transform duration-200"
-              style={{ display: 'inline-block', transform: open ? 'rotate(180deg)' : 'rotate(0deg)' }}
+              className="text-lg leading-none flex-shrink-0 transition-transform duration-200"
+              style={{
+                display: 'inline-block',
+                transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+                color: 'var(--border)',
+              }}
             >
               ▾
             </span>
@@ -84,7 +86,6 @@ function StoreCompareCard({
         )}
       </button>
 
-      {/* Height animation on the content reveal — no interactive children, safe to use Framer Motion */}
       <AnimatePresence initial={false}>
         {open && !noData && (
           <motion.div
@@ -95,7 +96,7 @@ function StoreCompareCard({
             transition={{ duration: 0.22, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
           >
-            <div className="border-t border-gray-100 divide-y divide-gray-50">
+            <div style={{ borderTop: '1px solid var(--border)' }}>
               {comparisons.map((c, i) => {
                 const product = storeName === 'woolworths' ? c.woolworths : c.coles;
                 const isCheapest = c.cheapest === storeName && !!product?.price;
@@ -104,24 +105,25 @@ function StoreCompareCard({
                 return (
                   <div
                     key={c.item}
-                    className={`flex items-center gap-3 px-4 py-3 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/40'}`}
+                    className="flex items-center gap-3 px-4 py-3"
+                    style={{ background: i % 2 === 0 ? 'var(--surface)' : 'rgba(0,0,0,0.015)', borderBottom: '1px solid var(--border)' }}
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 leading-snug">
+                      <p className="text-sm font-semibold leading-snug" style={{ color: 'var(--foreground)' }}>
                         {c.item.charAt(0).toUpperCase() + c.item.slice(1)}
                       </p>
                       {product?.name && (
-                        <p className="text-xs text-gray-400 truncate leading-snug mt-0.5">
+                        <p className="text-xs truncate leading-snug mt-0.5" style={{ color: 'var(--muted)' }}>
                           {product.name}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-1.5 flex-shrink-0">
-                      <span className={`text-sm font-bold tabular-nums ${product?.price ? 'text-gray-800' : 'text-gray-300'}`}>
+                      <span className="text-sm font-bold tabular-nums" style={{ color: product?.price ? 'var(--foreground)' : 'var(--border)' }}>
                         {price}
                       </span>
                       {isCheapest && (
-                        <span className="text-green-500 font-bold text-xs leading-none">✓</span>
+                        <span className="font-bold text-xs leading-none" style={{ color: 'var(--accent)' }}>✓</span>
                       )}
                     </div>
                   </div>
@@ -134,8 +136,6 @@ function StoreCompareCard({
     </div>
   );
 }
-
-// ── Main results component ───────────────────────────────────────────────────
 
 export default function StepResults({ result, onReset }: Props) {
   const { totals, comparisons } = result;
@@ -163,7 +163,7 @@ export default function StepResults({ result, onReset }: Props) {
   }, []);
 
   function toggleTick(item: string) {
-    setTicked((prev) => {
+    setTicked(prev => {
       const next = new Set(prev);
       if (next.has(item)) next.delete(item); else next.add(item);
       return next;
@@ -175,7 +175,7 @@ export default function StepResults({ result, onReset }: Props) {
       `Sunday.ai — ${store.label} Shopping List`,
       `Total: $${winnerTotal.toFixed(2)}${loserHasData && hasComparison ? `  (vs ${STORE_STYLE[loser].label} $${loserTotal.toFixed(2)}, save $${saving.toFixed(2)} on shared items)` : ''}`,
       '',
-      ...comparisons.map((c) => {
+      ...comparisons.map(c => {
         const product = winner === 'woolworths' ? c.woolworths : c.coles;
         const price = product?.price != null ? `$${Number(product.price).toFixed(2)}` : '–';
         return `☐  ${c.item}  —  ${product?.name || c.item}  ${price}`;
@@ -183,8 +183,6 @@ export default function StepResults({ result, onReset }: Props) {
     ].join('\n');
 
     const confirm = () => { setCopied(true); setTimeout(() => setCopied(false), 2200); };
-
-    // navigator.clipboard requires HTTPS or localhost — fall back to execCommand on LAN HTTP
     if (navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text).then(confirm).catch(() => execCopy(text, confirm));
     } else {
@@ -208,14 +206,14 @@ export default function StepResults({ result, onReset }: Props) {
   return (
     <div className="pt-5 space-y-4">
 
-      {/* Winner banner — cosmetic entrance animation only, no touch involvement */}
+      {/* Winner banner — store brand colors stay */}
       <div
-        style={{ backgroundColor: store.lightBg, borderColor: store.border }}
-        className="rounded-3xl p-5 border-2 step-fade"
+        style={{ backgroundColor: store.lightBg, borderColor: store.border, borderWidth: 2, borderStyle: 'solid' }}
+        className="rounded-3xl p-5 step-fade"
       >
         <div className="flex items-start justify-between mb-4">
           <div>
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-0.5">
+            <p className="text-xs font-medium uppercase tracking-wide mb-0.5" style={{ color: 'var(--muted)' }}>
               Winner this week
             </p>
             <h2 className="text-3xl font-extrabold" style={{ color: store.color }}>
@@ -234,17 +232,17 @@ export default function StepResults({ result, onReset }: Props) {
 
         <div className="flex items-end gap-5">
           <div>
-            <p className="text-xs text-gray-400 mb-0.5">{store.label}</p>
+            <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>{store.label}</p>
             <p className="text-2xl font-bold tabular-nums" style={{ color: store.color }}>
               ${winnerTotal.toFixed(2)}
             </p>
           </div>
           {loserHasData && hasComparison && (
             <>
-              <p className="text-gray-300 text-xl pb-0.5">vs</p>
+              <p className="text-xl pb-0.5" style={{ color: 'var(--border)' }}>vs</p>
               <div>
-                <p className="text-xs text-gray-400 mb-0.5">{STORE_STYLE[loser].label}</p>
-                <p className="text-2xl font-bold tabular-nums text-gray-400">
+                <p className="text-xs mb-0.5" style={{ color: 'var(--muted)' }}>{STORE_STYLE[loser].label}</p>
+                <p className="text-2xl font-bold tabular-nums" style={{ color: 'var(--muted)' }}>
                   ${loserTotal.toFixed(2)}
                 </p>
               </div>
@@ -253,22 +251,24 @@ export default function StepResults({ result, onReset }: Props) {
         </div>
       </div>
 
-      {/* Shopping list — plain buttons, no Framer Motion on interactive rows */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      {/* Shopping list */}
+      <div className="rounded-3xl overflow-hidden shadow-sm" style={{ background: 'var(--surface)', border: '1px solid var(--border)' }}>
+        <div className="px-5 py-4 flex items-center justify-between" style={{ borderBottom: '1px solid var(--border)' }}>
           <div>
-            <h3 className="font-bold text-gray-900">Your Shopping List</h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <h3 className="font-bold" style={{ color: 'var(--foreground)' }}>Your Shopping List</h3>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--muted)' }}>
               {store.label} · {comparisons.length} items
               {tickedCount > 0 && (
-                <span className="ml-2 text-green-600 font-medium">· {tickedCount} ticked off</span>
+                <span className="ml-2 font-medium" style={{ color: 'var(--accent)' }}>
+                  · {tickedCount} ticked off
+                </span>
               )}
             </p>
           </div>
           <span className="text-xl">🧾</span>
         </div>
 
-        <div className="divide-y divide-gray-50">
+        <div>
           {comparisons.map((c, i) => {
             const product = winner === 'woolworths' ? c.woolworths : c.coles;
             const price   = product?.price != null ? `$${Number(product.price).toFixed(2)}` : '–';
@@ -278,13 +278,20 @@ export default function StepResults({ result, onReset }: Props) {
               <button
                 key={c.item}
                 onClick={() => toggleTick(c.item)}
-                className={`w-full flex items-center gap-3.5 px-5 py-4 text-left active:bg-gray-50 transition-opacity ${
-                  i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'
-                } ${isTicked ? 'opacity-45' : 'opacity-100'}`}
+                className="w-full flex items-center gap-3.5 px-5 py-4 text-left transition-opacity"
+                style={{
+                  background: i % 2 === 0 ? 'var(--surface)' : 'rgba(0,0,0,0.015)',
+                  opacity: isTicked ? 0.45 : 1,
+                  borderBottom: '1px solid var(--border)',
+                }}
               >
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors ${
-                  isTicked ? 'border-green-500 bg-green-500' : 'border-gray-300 bg-white'
-                }`}>
+                <div
+                  className="w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-colors"
+                  style={{
+                    borderColor: isTicked ? 'var(--accent)' : 'var(--border)',
+                    background: isTicked ? 'var(--accent)' : 'var(--surface)',
+                  }}
+                >
                   {isTicked && (
                     <svg className="w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
@@ -292,36 +299,44 @@ export default function StepResults({ result, onReset }: Props) {
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className={`font-semibold text-base text-gray-900 leading-snug ${isTicked ? 'line-through decoration-gray-400' : ''}`}>
+                  <p
+                    className={`font-semibold text-base leading-snug ${isTicked ? 'line-through decoration-gray-400' : ''}`}
+                    style={{ color: 'var(--foreground)' }}
+                  >
                     {c.item.charAt(0).toUpperCase() + c.item.slice(1)}
                   </p>
                   {product?.name && (
-                    <p className="text-sm text-gray-400 truncate leading-snug mt-0.5">
+                    <p className="text-sm truncate leading-snug mt-0.5" style={{ color: 'var(--muted)' }}>
                       {product.name}
                     </p>
                   )}
                 </div>
-                <p className="font-bold text-base tabular-nums text-gray-800 flex-shrink-0">{price}</p>
+                <p className="font-bold text-base tabular-nums flex-shrink-0" style={{ color: 'var(--foreground)' }}>
+                  {price}
+                </p>
               </button>
             );
           })}
         </div>
 
-        <div className="px-5 py-3.5 bg-gray-50 border-t border-gray-100 flex justify-between items-center">
-          <span className="text-sm font-medium text-gray-500">Total</span>
+        <div
+          className="px-5 py-3.5 flex justify-between items-center"
+          style={{ background: 'rgba(0,0,0,0.02)', borderTop: '1px solid var(--border)' }}
+        >
+          <span className="text-sm font-medium" style={{ color: 'var(--muted)' }}>Total</span>
           <span className="text-lg font-extrabold tabular-nums" style={{ color: store.color }}>
             ${winnerTotal.toFixed(2)}
           </span>
         </div>
       </div>
 
-      {/* Per-store comparison cards */}
+      {/* Per-store breakdown */}
       <div>
-        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2 px-1">
+        <p className="text-xs font-medium uppercase tracking-wide mb-2 px-1" style={{ color: 'var(--muted)' }}>
           Full price breakdown
         </p>
         <div className="space-y-2">
-          {(['woolworths', 'coles'] as StoreName[]).map((s) => (
+          {(['woolworths', 'coles'] as StoreName[]).map(s => (
             <StoreCompareCard
               key={s}
               storeName={s}
@@ -339,13 +354,17 @@ export default function StepResults({ result, onReset }: Props) {
       <div className="flex gap-3 pb-4">
         <button
           onClick={copyList}
-          className="flex-1 h-14 rounded-2xl border-2 border-gray-200 bg-white text-gray-700 font-semibold active:scale-95 transition-all flex items-center justify-center gap-2"
+          className="flex-1 h-14 rounded-2xl font-semibold active:scale-95 transition-all flex items-center justify-center gap-2"
+          style={{ border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--foreground)' }}
         >
-          {copied ? <span className="text-green-600 font-bold">✓ Copied!</span> : <>📋 Copy List</>}
+          {copied
+            ? <span className="font-bold" style={{ color: 'var(--accent)' }}>✓ Copied!</span>
+            : <>📋 Copy List</>}
         </button>
         <button
           onClick={onReset}
-          className="flex-1 h-14 rounded-2xl bg-gray-900 text-white font-bold active:scale-95 transition-all"
+          className="flex-1 h-14 rounded-2xl text-white font-bold active:scale-95 transition-all"
+          style={{ background: 'var(--foreground)' }}
         >
           New List
         </button>

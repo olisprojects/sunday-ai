@@ -24,7 +24,7 @@ export default function StepLoading({ items, onResult, onError }: Props) {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setMsgIndex((i) => (i + 1) % MESSAGES.length);
+      setMsgIndex(i => (i + 1) % MESSAGES.length);
     }, 1600);
     return () => clearInterval(interval);
   }, []);
@@ -43,9 +43,7 @@ export default function StepLoading({ items, onResult, onError }: Props) {
         if (!res.ok) throw new Error(data.error || 'Something went wrong');
         if (!cancelled) onResult(data as CompareResult);
       } catch (err) {
-        if (!cancelled) {
-          setErrorMsg((err as Error).message);
-        }
+        if (!cancelled) setErrorMsg((err as Error).message);
       }
     }
 
@@ -57,15 +55,14 @@ export default function StepLoading({ items, onResult, onError }: Props) {
     return (
       <div className="pt-12 flex flex-col items-center text-center">
         <div className="text-5xl mb-6">😕</div>
-        <h2 className="text-xl font-bold text-gray-900 mb-2">Couldn&apos;t fetch prices</h2>
-        <p className="text-gray-500 text-sm mb-2 max-w-xs">{errorMsg}</p>
-        <p className="text-gray-400 text-xs mb-8 max-w-xs">
-          Make sure <code className="bg-gray-100 px-1 rounded">au-grocery-mcp</code> is installed globally
-          (<code className="bg-gray-100 px-1 rounded">npm install -g au-grocery-mcp</code>)
-        </p>
+        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>
+          Couldn&apos;t fetch prices
+        </h2>
+        <p className="text-sm mb-8 max-w-xs" style={{ color: 'var(--muted)' }}>{errorMsg}</p>
         <button
           onClick={onError}
-          className="h-12 px-6 rounded-2xl bg-gray-900 text-white font-semibold hover:bg-gray-800 active:scale-95 transition-all"
+          className="h-12 px-6 rounded-2xl text-white font-semibold active:scale-95 transition-all"
+          style={{ background: 'var(--foreground)' }}
         >
           ← Go back
         </button>
@@ -84,7 +81,9 @@ export default function StepLoading({ items, onResult, onError }: Props) {
         🛒
       </motion.div>
 
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">Comparing prices</h2>
+      <h2 className="text-2xl font-bold mb-2" style={{ color: 'var(--foreground)' }}>
+        Comparing prices
+      </h2>
 
       <div className="h-6 overflow-hidden mb-6">
         <AnimatePresence mode="wait">
@@ -94,7 +93,8 @@ export default function StepLoading({ items, onResult, onError }: Props) {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.25 }}
-            className="text-gray-500 text-base"
+            style={{ color: 'var(--muted)' }}
+            className="text-base"
           >
             {MESSAGES[msgIndex]}
           </motion.p>
@@ -103,17 +103,18 @@ export default function StepLoading({ items, onResult, onError }: Props) {
 
       {/* Pulsing dots */}
       <div className="flex gap-2">
-        {[0, 1, 2].map((i) => (
+        {[0, 1, 2].map(i => (
           <motion.div
             key={i}
             animate={{ scale: [1, 1.45, 1], opacity: [0.35, 1, 0.35] }}
             transition={{ repeat: Infinity, duration: 0.9, delay: i * 0.2 }}
-            className="w-2.5 h-2.5 rounded-full bg-green-500"
+            className="w-2.5 h-2.5 rounded-full"
+            style={{ background: 'var(--accent)' }}
           />
         ))}
       </div>
 
-      <p className="mt-8 text-sm text-gray-400">
+      <p className="mt-8 text-sm" style={{ color: 'var(--muted)' }}>
         Checking {items.length} item{items.length !== 1 ? 's' : ''}
       </p>
     </div>

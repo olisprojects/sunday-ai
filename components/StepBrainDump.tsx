@@ -1,11 +1,19 @@
 'use client';
 
-import { useState, useRef, KeyboardEvent } from 'react';
+import { useState, useRef, useMemo, KeyboardEvent } from 'react';
+import PantryPanel from './PantryPanel';
 
-const QUICK_ADD = [
-  'Milk', 'Bread', 'Eggs', 'Chicken', 'Rice', 'Pasta',
-  'Butter', 'Cheese', 'Yoghurt', 'Bananas', 'Apples', 'Coffee',
-  'Olive oil', 'Onions', 'Garlic', 'Tomatoes',
+const HEADLINES = [
+  "What's on the list this week?",
+  "What are we feeling like this week?",
+  "Let's find the best deals.",
+  "What do we need from the shops?",
+  "Time to fill the fridge.",
+  "What's running low this week?",
+  "Let's do the weekly shop.",
+  "What's on the menu this week?",
+  "Planning the weekly haul.",
+  "Let's compare and save.",
 ];
 
 interface Props {
@@ -13,97 +21,90 @@ interface Props {
 }
 
 export default function StepBrainDump({ onNext }: Props) {
+  const headline = useMemo(() => HEADLINES[Math.floor(Math.random() * HEADLINES.length)], []);
   const [input, setInput] = useState('');
   const [items, setItems] = useState<string[]>([]);
+  const [pantryOpen, setPantryOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   function addItem(text: string) {
     const trimmed = text.trim();
     if (!trimmed) return;
-    const lower = trimmed.toLowerCase();
-    if (items.map((i) => i.toLowerCase()).includes(lower)) {
+    if (items.map(i => i.toLowerCase()).includes(trimmed.toLowerCase())) {
       setInput('');
       return;
     }
-    setItems((prev) => [...prev, trimmed]);
+    setItems(prev => [...prev, trimmed]);
     setInput('');
     inputRef.current?.focus();
   }
 
   function removeItem(item: string) {
-    setItems((prev) => prev.filter((i) => i !== item));
+    setItems(prev => prev.filter(i => i !== item));
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      addItem(input);
-    }
+    if (e.key === 'Enter') { e.preventDefault(); addItem(input); }
     if (e.key === 'Backspace' && input === '' && items.length > 0) {
-      setItems((prev) => prev.slice(0, -1));
+      setItems(prev => prev.slice(0, -1));
     }
   }
 
-  const isAdded = (q: string) =>
-    items.map((i) => i.toLowerCase()).includes(q.toLowerCase());
+  function handleUseFromPantry(pantryItems: string[]) {
+    setItems(prev => {
+      const existing = prev.map(i => i.toLowerCase());
+      const toAdd = pantryItems.filter(i => !existing.includes(i.toLowerCase()));
+      return [...prev, ...toAdd];
+    });
+  }
 
   return (
-    <div className="pt-6">
-      <h1 className="text-3xl font-bold text-gray-900 leading-tight mb-1">
-        What&apos;s on the list this week?
-      </h1>
-      <p className="text-gray-500 text-base mb-6">
-        Tap a chip below, or type and press Add.
-      </p>
+    <>
+      <div className="pt-10 pb-4">
+        {/* Headline */}
+        <h1 className="text-3xl font-bold leading-tight mb-2" style={{ color: 'var(--foreground)' }}>
+          {headline}
+        </h1>
+        <p className="text-base mb-8" style={{ color: 'var(--muted)' }}>
+          Type an item and press Enter, then compare prices.
+        </p>
 
-      {/* Input row */}
-      <div className="flex gap-2 mb-5">
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="e.g. Full cream milk..."
-          className="flex-1 h-14 px-4 rounded-2xl border-2 border-gray-200 bg-white text-gray-900 text-base placeholder-gray-400 focus:outline-none focus:border-green-400 transition-colors"
-        />
-        <button
-          onClick={() => addItem(input)}
-          disabled={!input.trim()}
-          className="h-14 px-5 rounded-2xl bg-green-500 text-white font-semibold text-base disabled:opacity-40 active:scale-95 transition-all"
-        >
-          Add
-        </button>
-      </div>
-
-      {/* Quick-add chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
-        {QUICK_ADD.map((q) => (
+        {/* Chat-style input */}
+        <div className="flex gap-2 mb-4">
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g. Full cream milk..."
+            autoFocus
+            className="flex-1 h-14 px-5 rounded-2xl text-base transition-colors focus:outline-none shadow-sm"
+            style={{
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--foreground)',
+            }}
+            onFocus={e => (e.currentTarget.style.borderColor = 'var(--accent)')}
+            onBlur={e => (e.currentTarget.style.borderColor = 'var(--border)')}
+          />
           <button
-            key={q}
-            onClick={() => addItem(q)}
-            className={`px-3 py-2 rounded-full text-sm font-medium transition-colors active:scale-95 ${
-              isAdded(q)
-                ? 'bg-green-100 text-green-700 border border-green-300'
-                : 'bg-white border border-gray-200 text-gray-600'
-            }`}
+            onClick={() => addItem(input)}
+            disabled={!input.trim()}
+            className="h-14 px-5 rounded-2xl text-white font-semibold text-base disabled:opacity-40 active:scale-95 transition-all"
+            style={{ background: 'var(--accent)' }}
           >
-            {isAdded(q) ? '✓ ' : '+ '}
-            {q}
+            Add
           </button>
-        ))}
-      </div>
+        </div>
 
-      {/* Added items */}
-      {items.length > 0 && (
-        <div className="mb-6">
-          <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-2">
-            {items.length} item{items.length !== 1 ? 's' : ''} added
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {items.map((item) => (
+        {/* Added items chips */}
+        {items.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-5">
+            {items.map(item => (
               <div
                 key={item}
-                className="chip-in flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 text-white text-sm font-medium"
+                className="chip-in flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-sm font-medium"
+                style={{ background: 'var(--foreground)' }}
               >
                 {item}
                 <button
@@ -116,17 +117,48 @@ export default function StepBrainDump({ onNext }: Props) {
               </div>
             ))}
           </div>
-        </div>
-      )}
+        )}
 
-      {/* CTA */}
-      <button
-        onClick={() => onNext(items)}
-        disabled={items.length === 0}
-        className="w-full h-14 rounded-2xl bg-green-500 text-white font-bold text-lg disabled:opacity-40 active:scale-95 transition-all shadow-lg shadow-green-500/25"
-      >
-        Compare Prices →
-      </button>
-    </div>
+        {/* Item count + pantry trigger */}
+        <div className="flex items-center justify-between mb-6">
+          <p className="text-sm" style={{ color: 'var(--muted)' }}>
+            {items.length > 0
+              ? `${items.length} item${items.length !== 1 ? 's' : ''} added`
+              : 'No items yet'}
+          </p>
+          <button
+            onClick={() => setPantryOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm active:scale-95 transition-all"
+            style={{
+              border: '1px solid var(--border)',
+              background: 'var(--surface)',
+              color: 'var(--muted)',
+            }}
+          >
+            <span>🧺</span>
+            <span>This week&apos;s list</span>
+          </button>
+        </div>
+
+        {/* Compare CTA */}
+        <button
+          onClick={() => onNext(items)}
+          disabled={items.length === 0}
+          className="w-full h-14 rounded-2xl text-white font-bold text-lg disabled:opacity-30 active:scale-95 transition-all"
+          style={{
+            background: 'var(--accent)',
+            boxShadow: '0 8px 24px rgba(124,58,237,0.2)',
+          }}
+        >
+          Compare Prices →
+        </button>
+      </div>
+
+      <PantryPanel
+        open={pantryOpen}
+        onClose={() => setPantryOpen(false)}
+        onUseItems={handleUseFromPantry}
+      />
+    </>
   );
 }
