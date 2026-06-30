@@ -11,7 +11,14 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
   const cached = await cacheGet<WoolworthsProduct[]>(cacheKey);
   if (cached) return cached;
 
-  const fetchUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
+  // Woolworths' Cloudflare WAF blocks all datacenter IPs (Lambda, Workers, etc.).
+  // ScraperAPI routes through residential IPs to bypass this. Free tier: 1000 req/month;
+  // with 48h Redis cache, actual usage is ~20-40 req/month — well within limits.
+  const woolworthsUrl = `https://www.woolworths.com.au/apis/ui/Search/products?searchTerm=${encodeURIComponent(query)}&pageSize=5`;
+  const scraperKey = process.env.SCRAPER_API_KEY;
+  const fetchUrl = scraperKey
+    ? `http://api.scraperapi.com?api_key=${scraperKey}&url=${encodeURIComponent(woolworthsUrl)}&country_code=au`
+    : woolworthsUrl;
 
   try {
     const res = await fetch(fetchUrl, {
