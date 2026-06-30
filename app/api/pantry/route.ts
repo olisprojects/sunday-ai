@@ -5,31 +5,29 @@ const PANTRY_KEY = 'pantry:shared';
 // In-memory fallback for local dev (when Upstash env vars aren't set)
 const localStore: string[] = [];
 
-function hasRedis() {
-  return !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+function getRedisConfig() {
+  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  return url && token ? { url, token } : null;
 }
 
 async function getItems(): Promise<string[]> {
-  if (!hasRedis()) return [...localStore];
+  const cfg = getRedisConfig();
+  if (!cfg) return [...localStore];
   const { Redis } = await import('@upstash/redis');
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  });
+  const redis = new Redis(cfg);
   return (await redis.get<string[]>(PANTRY_KEY)) ?? [];
 }
 
 async function saveItems(items: string[]): Promise<void> {
-  if (!hasRedis()) {
+  const cfg = getRedisConfig();
+  if (!cfg) {
     localStore.length = 0;
     localStore.push(...items);
     return;
   }
   const { Redis } = await import('@upstash/redis');
-  const redis = new Redis({
-    url: process.env.UPSTASH_REDIS_REST_URL!,
-    token: process.env.UPSTASH_REDIS_REST_TOKEN!,
-  });
+  const redis = new Redis(cfg);
   await redis.set(PANTRY_KEY, items);
 }
 
