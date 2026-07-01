@@ -23,7 +23,15 @@ export async function searchItem(query: string): Promise<WoolworthsProduct[]> {
     });
 
     if (!res.ok) {
-      console.error('[woolworths-api] status:', res.status, 'for query:', query);
+      const body = await res.text().catch(() => '');
+      console.error(
+        '[woolworths-api] status:', res.status,
+        'for query:', query,
+        'server:', res.headers.get('server'),
+        'x-iinfo:', res.headers.get('x-iinfo'),
+        'cf-ray:', res.headers.get('cf-ray'),
+        'body:', body.slice(0, 500),
+      );
       return [];
     }
 
